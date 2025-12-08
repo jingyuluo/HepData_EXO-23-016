@@ -3,21 +3,27 @@
 
 # In[1]:
 
-
+import os
 import pickle
 import matplotlib.pyplot as plt
 import mplhep as hep
-from coffea import hist
+#from coffea import hist
 import numpy as np
 hep.style.use("CMS")
 import matplotlib.patches as patches
+
 
 
 # In[9]:
 
 
 import numpy as np
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
+
+from hepdata_lib import Table, Variable, Uncertainty, Submission
+
+with open("data_Martin/EXO-23-016-MDS-hist.pkl",'rb') as f:
+    histograms = pickle.load(f)
 
 def _get_edges(axis) -> np.ndarray:
     edges_attr = getattr(axis, "edges", None)
@@ -37,7 +43,8 @@ def compute_ratio_arrays(
     numer_label: str,
     denom_label: str,
     sample_axis_name: str = "sample",
-    axis_indices: List[int] | None = None,
+    #axis_indices: List[int] | None = None,
+    axis_indices: Union[List[int], None] = None,
     uncertainty_type: str = "efficiency",
 ) -> Dict[str, Any]:
     """
@@ -119,20 +126,39 @@ def compute_ratio_arrays(
 
 
 
-import hepdata_lib
 
 
 # In[54]:
 
 
-import numpy as np
-from typing import Any, Dict, List
+
+#try:
+#    from hepdata_lib import Table, Variable
+#except Exception as exc:
+#    raise RuntimeError("hepdata_lib is required (pip install hepdata_lib): %s" % exc)
+
+#import hepdata_lib
+
+
+# In[54]:                                                                                                                                                 
+
+
+#import numpy as np
+#from typing import Any, Dict, List
+#from hepdata_lib import Table, Variable, Uncertainty, Submission
+
+#try:
+#    from hepdata_lib import Table, Variable, Uncertainty, Submission
+#except Exception as exc:
+#    raise RuntimeError("hepdata_lib is required (pip install hepdata_lib): %s" % exc)
 
 def make_hepdata_table_from_arrays(
     arrays: Dict[str, Any],
     table_name: str,
-    independent_names: List[str] | None = None,
-    independent_units: List[str] | None = None,
+    #independent_names: List[str] | None = None,
+    #independent_units: List[str] | None = None,
+    independent_names: Union[List[str], None] = None,
+    independent_units: Union[List[str], None] = None,
     dependent_name: str = "ratio",
     dependent_units: str = "",
 ):
@@ -147,10 +173,6 @@ def make_hepdata_table_from_arrays(
         [(value, (minus, plus)), ...]
       where `value` is `None` for NaN entries and minus/plus are floats (or None).
     """
-    try:
-        from hepdata_lib import Table, Variable
-    except Exception as exc:
-        raise RuntimeError("hepdata_lib is required (pip install hepdata_lib): %s" % exc)
 
     edges_list = arrays["edges"]
     ratio = np.asarray(arrays["ratio"])
@@ -227,8 +249,8 @@ def make_hepdata_table_from_arrays(
 # In[146]:
 
 
-with open("EXO-23-016-MDS-hist.pkl",'rb') as f:
-    histograms = pickle.load(f)
+#with open("data_Martin/EXO-23-016-MDS-hist.pkl",'rb') as f:
+#    histograms = pickle.load(f)
 
 
 # # Fig 56
@@ -259,9 +281,10 @@ def makeFig56table(histograms):
 
 # In[176]:
 
+#import hepdata_lib
 
 def makeFig60table(histograms):
-    result = histograms['results']
+    results = histograms['results']
     table = Table("LLP Run 2, Run 3 acceptance comparison")
     mH=125
     mS=40
@@ -294,7 +317,7 @@ def makeFig60table(histograms):
 # In[178]:
 
 
-makeFig60table(histograms)
+#makeFig60table(histograms)
 
 
 # # Fig 61
@@ -395,6 +418,23 @@ def makeMDStables(histograms):
     makeFig63table(histograms)
     makeFig64table(histograms)
 
+# Create the submission object                                                                                                              
+submission = Submission()
+
+ 
+# Create output directory early                                                                                                             
+output_dir = "hepdataMartin_output"
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+#submission.add_table(makeFig56table(histograms))
+submission.add_table(makeFig60table(histograms))
+submission.add_table(makeFig61table(histograms))
+submission.add_table(makeFig62table(histograms))
+#submission.add_table(makeFig63table(histograms))
+#submission.add_table(makeFig64table(histograms))
+
+submission.create_files(output_dir,remove_old=True)
 
 # In[ ]:
 
